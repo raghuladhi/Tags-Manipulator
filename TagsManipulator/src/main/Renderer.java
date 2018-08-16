@@ -2,6 +2,9 @@ package main;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -32,7 +35,7 @@ public class Renderer extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		StringBuffer sb = new StringBuffer();
 		String line = "";
-		String type=null,text,tag,content;
+		String type=null,text = null,startTag,content,closeTag;
 		int pos;
 		BufferedReader bufferedreader = request.getReader();
 		while((line=bufferedreader.readLine())!=null)
@@ -45,11 +48,40 @@ public class Renderer extends HttpServlet {
 		try {
 			Object obj = parser.parse(sb.toString());
 			JSONObject jsonobj = (JSONObject)obj;
-			text= (String) jsonobj.get("text");
-			System.out.println(text);
-			
-			
-			
+			type= (String) jsonobj.get("type");
+			if(type.equals("insert")){
+				text=(String) jsonobj.get("text");
+				startTag=(String)jsonobj.get("tag");
+				closeTag=getCloseTag(startTag);
+				pos = (Integer.parseInt((String) jsonobj.get("pos")));
+				content = (String)jsonobj.get("content");
+				Pattern pattern = Pattern.compile("((?:.*?"+startTag+".*?"+closeTag+"){"+(pos-1)+"}.*?)("+startTag+".*?"+closeTag+")(.*)",Pattern.DOTALL);
+				Matcher matcher = pattern.matcher(text);
+				text = matcher.replaceAll("$1"+startTag+content+closeTag+"$2"+"$3");
+			}
+			else if(type.equals("modify")){
+				text=(String) jsonobj.get("text");
+				startTag=(String)jsonobj.get("tag");
+				closeTag=getCloseTag(startTag);
+				pos = (Integer.parseInt((String) jsonobj.get("pos")));
+				content = (String)jsonobj.get("content");
+				Pattern pattern = Pattern.compile("((?:.*?"+startTag+".*?"+closeTag+"){"+(pos-1)+"}.*?)("+startTag+".*?"+closeTag+")(.*)",Pattern.DOTALL);
+				Matcher matcher = pattern.matcher(text);
+				text = matcher.replaceAll("$1"+startTag+content+closeTag+"$3");
+			}
+			else if(type.equals("remove")){
+				text=(String) jsonobj.get("text");
+				startTag=(String)jsonobj.get("tag");
+				closeTag=getCloseTag(startTag);
+				pos = (Integer.parseInt((String) jsonobj.get("pos")));
+				Pattern pattern = Pattern.compile("((?:.*?"+startTag+".*?"+closeTag+"){"+(pos-1)+"}.*?)("+startTag+".*?"+closeTag+")(.*)",Pattern.DOTALL);
+				Matcher matcher = pattern.matcher(text);
+				text = matcher.replaceAll("$1"+"$3");
+				
+				
+			}
+			response.setContentType("text");
+			response.getWriter().write(text);
 			
 			
 			
@@ -60,6 +92,12 @@ public class Renderer extends HttpServlet {
 		}
 		
 	
+	}
+
+	private String getCloseTag(String startTag) {
+		StringBuilder stringbuilder = new StringBuilder(startTag);
+		stringbuilder.insert(1,"\\/");
+		return stringbuilder.toString();
 	}
 
 	/**
