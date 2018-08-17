@@ -19,6 +19,31 @@ var string = '<form><div class="form-group"><label for="tag">Enter the tag</labe
 	area.innerHTML = string;
 }
 
+ var btn = document.getElementById("render").addEventListener("click",function(){
+	console.log("inside render");
+	var textArea = document.getElementById("htmlText");
+	var object={
+			"text":textArea.value,
+			"type":"render"
+	}
+	fetch('http://localhost:8081/TagsManipulator/render',{
+		method:"POST",
+		body:JSON.stringify(object),
+		header:{
+			"content-type":"text/json"
+		}
+	})
+	.then(function(response){
+		console.log("successful request");
+		response.text()
+			.then(function(text){
+				textArea.value=text;
+			});
+	})
+	.catch(function(err){
+		console.log("Error occured:"+err);
+	});
+});
 function insert(){
 	var textArea = document.getElementById("htmlText");
 	var tag = document.getElementById("tag").value;

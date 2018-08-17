@@ -2,6 +2,7 @@ package main;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -77,6 +78,21 @@ public class Renderer extends HttpServlet {
 				Pattern pattern = Pattern.compile("((?:.*?"+startTag+".*?"+closeTag+"){"+(pos-1)+"}.*?)("+startTag+".*?"+closeTag+")(.*)",Pattern.DOTALL);
 				Matcher matcher = pattern.matcher(text);
 				text = matcher.replaceAll("$1"+"$3");
+				
+				
+			}
+			else if(type.equals("render")){
+				text=(String) jsonobj.get("text");
+				HashMap<String,String> unicode = new HashMap<String,String>();
+				unicode.put("\\\\n", "<p>");
+				unicode.put("\\\\u0010", "<table>");
+				unicode.put("\\\\u0012", "<tr>");
+				unicode.put("\\\\u001c", "<td>");
+				unicode.put("\\\\u0011", "</table>");
+				unicode.put("\\\\u000b", "<br>");
+				for(String key:unicode.keySet()){
+				text = text.replaceAll(key, unicode.get(key));
+				}
 				
 				
 			}
